@@ -155,9 +155,14 @@ try {
     }
 
     if ($action === 'admin_demo_login') {
-        // Acesso rápido permitido apenas em ambiente local de apresentação/PAP.
-        if (!movings_is_local_request()) {
-            json_response(array('ok' => false, 'error' => 'forbidden', 'message' => 'Login demo disponível apenas localmente.'), 403);
+        // Acesso rápido permitido em local ou quando explicitamente ativado
+        // para a demo pública Railway através de MOVINGS_ENABLE_DEMO_ADMIN=true.
+        if (!movings_is_local_request() && !movings_env_bool('MOVINGS_ENABLE_DEMO_ADMIN', false)) {
+            json_response(array(
+                'ok' => false,
+                'error' => 'forbidden',
+                'message' => 'Login demo desativado em produção. Ativa MOVINGS_ENABLE_DEMO_ADMIN=true no backend para a demo.'
+            ), 403);
         }
 
         // Mantém o admin sempre sincronizado com admin/admin123 e evita bloqueios por dados antigos no navegador.

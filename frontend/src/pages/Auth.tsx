@@ -201,7 +201,7 @@ const Auth = () => {
 
       if (!result || !result.ok) {
         const errorCode = result?.error || '';
-        let msg = result?.message || 'Ocorreu um erro. Confirma se o WAMP está verde e se os ficheiros PHP estão em C:\\wamp64\\www\\movings-api.';
+        let msg = result?.message || 'Ocorreu um erro ao comunicar com o backend Movings no Railway.';
 
         if (errorCode === 'username_taken') msg = 'Este username já está ocupado.';
         else if (errorCode === 'email_taken') msg = 'Esse email já está a ser usado.';
@@ -210,8 +210,9 @@ const Auth = () => {
         else if (errorCode === 'username_too_short') msg = 'O username tem de ter pelo menos 3 caracteres.';
         else if (errorCode === 'password_too_short' || errorCode === 'weak_password') msg = result?.message || 'A password tem de ter pelo menos 8 caracteres, 1 maiúscula, 1 minúscula e 1 número.';
         else if (errorCode === 'invalid_email') msg = 'Indica um email válido para poderes recuperar a password.';
-        else if (errorCode === 'connection_failed') msg = 'Erro de ligação ao backend. Abre http://127.0.0.1/movings-api/health.php e confirma se a API responde.';
+        else if (errorCode === 'connection_failed') msg = 'Erro de ligação ao backend Movings. Confirma se o serviço PHP/API está online no Railway.';
         else if (errorCode === 'server_error') msg = `Erro no PHP/base de dados: ${result?.message || 'sem detalhes'}`;
+        else if (errorCode.startsWith('http_')) msg = `Backend respondeu com erro ${errorCode.replace('http_', '')}. Confirma o proxy /api/php e os logs do serviço PHP.`;
 
         throw new Error(msg);
       }

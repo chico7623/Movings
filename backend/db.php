@@ -38,6 +38,20 @@ if (!function_exists('movings_env_value')) {
     }
 }
 
+
+if (!function_exists('movings_env_bool')) {
+    function movings_env_bool($name, $default = false) {
+        $value = movings_env_value($name, $default ? 'true' : 'false');
+        if (is_bool($value)) return $value;
+
+        $normalized = strtolower(trim((string)$value));
+        if (in_array($normalized, array('1', 'true', 'yes', 'on'), true)) return true;
+        if (in_array($normalized, array('0', 'false', 'no', 'off', ''), true)) return false;
+
+        return $default;
+    }
+}
+
 if (!function_exists('movings_allowed_origins')) {
     function movings_allowed_origins() {
         $raw = trim((string)movings_env_value('MOVINGS_ALLOWED_ORIGINS', ''));
@@ -1212,6 +1226,13 @@ function load_store() {
     $pdo = pdo_db();
     $store = load_store_from_mysql($pdo);
     $store = ensure_store_shape($store);
+
+    // Demo pública: quando ativado por variável de ambiente, garante que
+    // o utilizador admin/admin123 existe também em produção Railway.
+    if (movings_is_local_request() || movings_env_bool('MOVINGS_ENABLE_DEMO_ADMIN', false)) {
+        $store = ensure_admin($store);
+    }
+
     save_store($store);
     return $store;
 }

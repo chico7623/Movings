@@ -1,10 +1,18 @@
 :{$PORT:8080} {
-    root * /usr/share/caddy
     encode gzip zstd
 
+    # Same-origin API proxy for the PHP backend.
+    # This avoids browser CORS issues and avoids relying on Vite build-time env injection.
+    handle_path /api/php/* {
+        reverse_proxy {$PHP_API_URL:https://movings-production.up.railway.app}
+    }
+
     # React Router/Vite SPA: permite refresh em /admin, /watchlist, etc.
-    try_files {path} /index.html
-    file_server
+    handle {
+        root * /usr/share/caddy
+        try_files {path} /index.html
+        file_server
+    }
 
     header {
         X-Content-Type-Options "nosniff"

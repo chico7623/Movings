@@ -1,7 +1,7 @@
 /**
  * Low-level HTTP wrapper with JSON handling, auth token and CSRF header support.
  */
-import { apiConfig } from "@/lib/env";
+import { apiConfig, env } from "@/lib/env";
 import { getAuthToken, getCsrfToken } from "@/lib/auth-storage";
 import { AppError, mapStatusToErrorCode } from "@/lib/errors";
 import { logger } from "@/lib/logger";
@@ -60,7 +60,7 @@ export async function apiRequest<T = unknown>(
   }
 
   throw new AppError({
-    message: "Não foi possível ligar ao backend.",
+    message: "Não foi possível ligar ao backend Movings. Confirma se o serviço PHP/API está online no Railway.",
     code: "NETWORK_ERROR",
     statusCode: 0,
     details: lastError,
@@ -82,16 +82,22 @@ export async function apiFetch<T = unknown>(
 
 function buildPhpApiUrls(endpoint: string, searchParams?: Record<string, PrimitiveQueryValue>) {
   const cleanEndpoint = endpoint.replace(/^\/+/, "");
+  const configuredBaseUrl = apiConfig.phpDirectBaseUrl || apiConfig.phpProxyBaseUrl;
 
-  // WAMP costuma alternar entre localhost e 127.0.0.1 conforme a instalação.
-  // Mantemos vários fallbacks para impedir falso "backend offline".
-  const baseUrls = Array.from(new Set([
-    apiConfig.phpDirectBaseUrl,
+  const productionBaseUrls = Array.from(new Set([
+    configuredBaseUrl,
+    apiConfig.phpProxyBaseUrl,
+  ]));
+
+  const developmentBaseUrls = Array.from(new Set([
+    configuredBaseUrl,
+    apiConfig.phpProxyBaseUrl,
     "http://localhost/movings-api",
     "http://127.0.0.1/movings-api",
-    "/api/php",
     "/movings-api",
   ]));
+
+  const baseUrls = env.PROD ? productionBaseUrls : developmentBaseUrls;
 
   return baseUrls.map((baseUrl) => {
     const url = new URL(`${baseUrl.replace(/\/+$/, "")}/${cleanEndpoint}`, window.location.origin);
@@ -153,7 +159,7 @@ async function parseResponseBody<T>(response: Response): Promise<T | null> {
     return JSON.parse(text) as T;
   } catch (error) {
     throw new AppError({
-      message: "A API devolveu uma resposta inválida.",
+      message: "A API devolveu uma resposta inválida. Confirma a configuração do proxy /api/php no frontend.",
       code: mapStatusToErrorCode(response.status) === "INTERNAL_ERROR" ? "INVALID_JSON" : mapStatusToErrorCode(response.status),
       statusCode: response.status,
       details: { text, error },
