@@ -1,0 +1,23 @@
+# Dependências
+node_modules/
+
+# Builds locais
+dist/
+.vite/
+
+# Configurações locais
+.env
+.env.*
+!.env.example
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Sistema/IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

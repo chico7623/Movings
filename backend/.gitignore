@@ -1,0 +1,28 @@
+# Segredos locais
+db_config.php
+smtp_config.local.php
+.env
+.env.*
+
+# Logs e caixa local de emails
+mail_errors.log
+local_mailbox/
+*.log
+
+# Dados locais/temporários
+data/*.bak
+data/*.tmp
+data/*backup*
+*.sql.bak
+
+# Dependências e artefactos
+vendor/
+composer.lock
+
+
+# Produção/Railway
+db_config.php
+smtp_config.local.php
+*.log
+local_mailbox/
+data/

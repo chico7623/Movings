@@ -1,0 +1,19 @@
+# Movings PAP - WAMP/Apache
+# Garante que o header Authorization chega ao PHP para validação JWT.
+<IfModule mod_setenvif.c>
+    SetEnvIfNoCase Authorization "(.+)" HTTP_AUTHORIZATION=$1
+</IfModule>
+
+# Evita listagem de diretórios na pasta da API.
+Options -Indexes
+
+# Bloqueia acesso direto a configurações, dumps, documentação interna e logs.
+<FilesMatch "(^\.|db_config\.php$|smtp_config(\.local)?\.php$|composer\.(json|lock)$|.*\.(sql|md|log)$)">
+    Require all denied
+</FilesMatch>
+
+# Impede exposição direta de dados/fallbacks locais pelo browser.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(data|local_mailbox)/ - [F,L]
+</IfModule>

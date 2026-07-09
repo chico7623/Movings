@@ -1,0 +1,17 @@
+# dependencies/build outputs
+node_modules/
+dist/
+.vite/
+
+# local secrets
+.env
+.env.*
+!.env.example
+db_config.php
+smtp_config.local.php
+
+# logs/local mail/test data
+*.log
+local_mailbox/
+data/
+.DS_Store
