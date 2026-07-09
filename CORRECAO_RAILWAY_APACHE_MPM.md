@@ -31,3 +31,22 @@ Depois, no Railway, faz redeploy do serviço backend e testa:
 ```text
 https://movings-production.up.railway.app/health.php
 ```
+
+
+---
+
+## Correção final aplicada nesta versão
+
+O backend deixou de usar `php:8.3-apache` e passou para `php:8.3-cli` com o servidor PHP embutido:
+
+```text
+php -S 0.0.0.0:${PORT:-8080} -t /app /app/router.php
+```
+
+Isto remove por completo o erro:
+
+```text
+AH00534: apache2: Configuration error: More than one MPM loaded.
+```
+
+Também foi adicionado `backend/router.php` para substituir as proteções do `.htaccess`, porque o servidor PHP embutido não lê regras Apache.

@@ -12,7 +12,7 @@ Esta pasta foi preparada para publicação controlada. Não inclui:
 
 ```text
 frontend/   React + Vite servido por Caddy
-backend/    PHP + Apache + API Movings
+backend/    PHP CLI + servidor PHP embutido + API Movings
 database/   SQL para importar na base MySQL
 ```
 
@@ -30,6 +30,8 @@ No serviço `movings-backend`, configura:
 
 ```env
 MOVINGS_ALLOWED_ORIGINS=https://TEU-FRONTEND.up.railway.app
+# Temporário, enquanto ainda não tens frontend publicado:
+# MOVINGS_ALLOWED_ORIGINS=*
 MOVINGS_JWT_SECRET=troca_por_uma_string_privada_com_mais_de_32_caracteres
 
 SMTP_HOST=smtp-relay.brevo.com
@@ -84,3 +86,17 @@ Depois do deploy:
 - testar likes/dislikes;
 - testar watchlist;
 - testar recuperação de password por email.
+
+
+## Teste rápido do backend
+
+Depois do deploy do serviço `movings-backend`, abre:
+
+```text
+https://TEU-BACKEND.up.railway.app/
+https://TEU-BACKEND.up.railway.app/health.php
+```
+
+A raiz deve devolver JSON com `status: running`.
+O `/health.php` deve confirmar que o PHP respondeu e se o MySQL está ligado.
+Se `schema` aparecer como `missing_or_partial`, importa os SQL da pasta `database/` antes de testar login, comentários e ratings.

@@ -68,8 +68,13 @@ if (!function_exists('movings_resolve_cors_origin')) {
 
         // Produção/Railway: quando MOVINGS_ALLOWED_ORIGINS está definido e o pedido
         // não é local, o backend aceita apenas o domínio público do frontend.
-        // Isto evita CORS aberto em publicação real/controlada.
+        // Durante a demo, MOVINGS_ALLOWED_ORIGINS=* é suportado devolvendo a origem real
+        // do pedido, porque Access-Control-Allow-Credentials não pode usar "*" literal.
         if (!movings_is_local_request() && count($allowedOrigins) > 0) {
+            if (in_array('*', $allowedOrigins, true)) {
+                return $origin;
+            }
+
             foreach ($allowedOrigins as $allowedOrigin) {
                 if (hash_equals($allowedOrigin, $origin)) {
                     return $origin;
@@ -216,7 +221,7 @@ function pdo_db() {
         json_response(array(
             'ok' => false,
             'error' => 'db_connection_failed',
-            'message' => 'A API não conseguiu abrir a base de dados MySQL. Confirma se a BD movings existe, se o WAMP está verde e se db_config.php tem user/password certos.',
+            'message' => 'A API PHP está online, mas não conseguiu abrir a base de dados MySQL. No Railway confirma MYSQLHOST, MYSQLPORT, MYSQLUSER, MYSQLPASSWORD e MYSQLDATABASE; em local confirma WAMP/db_config.php.',
             'details' => $e->getMessage()
         ), 500);
     }

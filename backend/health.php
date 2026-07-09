@@ -1,35 +1,45 @@
 <?php
 require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/maintenance_guard.php';
-
-movings_require_maintenance_access();
 
 try {
     $cfg = movings_config();
     $pdo = pdo_db();
-    install_schema($pdo);
-    $store = load_store();
+    $pdo->query('SELECT 1');
+
+    $requiredTables = array('users', 'ratings', 'comments', 'watchlist', 'password_resets');
+    $existingTables = array();
+
+    foreach ($requiredTables as $tableName) {
+        $stmt = $pdo->prepare('SHOW TABLES LIKE ?');
+        $stmt->execute(array($tableName));
+        if ($stmt->fetchColumn()) {
+            $existingTables[] = $tableName;
+        }
+    }
+
+    $schemaReady = count($existingTables) === count($requiredTables);
 
     json_response(array(
         'ok' => true,
         'status' => 'ok',
+        'service' => 'Movings PHP API',
         'backend' => 'connected',
-        'mode' => 'mysql_wamp_auto_repair',
-        'db_name' => $cfg['name'],
+        'database' => 'connected',
+        'schema' => $schemaReady ? 'ready' : 'missing_or_partial',
+        'tables_found' => $existingTables,
         'php_version' => PHP_VERSION,
-        'users' => count($store['users']),
-        'ratings' => count($store['ratings']),
-        'comments' => count($store['comments']),
-        'requests' => isset($store['movie_requests']) && is_array($store['movie_requests']) ? count($store['movie_requests']) : 0,
-        'custom_catalog' => isset($store['custom_catalog']) && is_array($store['custom_catalog']) ? count($store['custom_catalog']) : 0,
-        'message' => 'Backend Movings operacional. Se o frontend ainda disser offline, confirma o .env e reinicia npm run dev.'
+        'message' => $schemaReady
+            ? 'Backend Movings operacional.'
+            : 'Backend online; confirma/importa os SQL da pasta database se algum endpoint falhar.'
     ));
 } catch (Throwable $e) {
     json_response(array(
         'ok' => false,
         'status' => 'error',
-        'backend' => 'offline',
-        'message' => 'Backend encontrado, mas falhou ao preparar MySQL.',
+        'service' => 'Movings PHP API',
+        'backend' => 'online',
+        'database' => 'offline',
+        'message' => 'Backend PHP respondeu, mas falhou a ligação ao MySQL.',
         'details' => $e->getMessage()
     ), 500);
 }

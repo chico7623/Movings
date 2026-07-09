@@ -1,0 +1,23 @@
+# backend/.dockerignore
+# Mantém o contexto Docker pequeno e impede segredos/artefactos locais no container Railway.
+
+.git
+.gitignore
+.dockerignore
+
+db_config.php
+smtp_config.local.php
+.env
+.env.*
+
+vendor/
+composer.lock
+
+local_mailbox/
+data/
+*.log
+*.sql.bak
+*.bak
+*.tmp
+
+docker/
