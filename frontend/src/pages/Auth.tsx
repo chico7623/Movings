@@ -7,7 +7,7 @@
  */
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Film, Mail, Lock, Eye, EyeOff, ArrowLeft, Shield } from 'lucide-react';
+import { Film, Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -107,47 +107,6 @@ const Auth = () => {
     else if (issues.length <= 1) setPasswordStrength('Média');
     else setPasswordStrength('Fraca');
   }, [password]);
-
-  const handleAdminLogin = async () => {
-    setIsLoading(true);
-
-    try {
-      localStorage.removeItem('movings_user');
-      setCsrfToken(null);
-
-      const result = await postData<AuthResponse>('auth.php', {
-        action: 'admin_demo_login',
-      });
-
-      if (!result || !result.ok) {
-        throw new Error(result?.message || 'Não foi possível entrar como admin.');
-      }
-
-      if (!result.user || !result.token || !result.csrf_token) {
-        throw new Error('A resposta do backend não trouxe a sessão de admin completa.');
-      }
-
-      const userData = {
-        ...result.user,
-        token: result.token,
-        csrf_token: result.csrf_token,
-      };
-
-      setCsrfToken(result.csrf_token);
-      updateUser(userData);
-
-      toast({
-        title: 'Admin ativado',
-        description: 'Entraste no painel de administração do Movings.',
-      });
-
-      navigate('/admin', { replace: true });
-    } catch (error: unknown) {
-      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -286,20 +245,9 @@ const Auth = () => {
 
           {isLogin && (
             <div className="mb-6 rounded-xl border border-primary/20 bg-primary/10 p-3 text-sm text-muted-foreground">
-              <p className="font-semibold text-foreground">Admin para testar</p>
-              <p>Username: <span className="font-mono text-foreground">admin</span></p>
-              <p>Password: <span className="font-mono text-foreground">admin123</span></p>
-              <p className="mt-1 text-xs">Também podes usar o botão direto para evitar problemas de sessão/localStorage.</p>
-              <Button
-                type="button"
-                variant="outline"
-                className="mt-3 w-full gap-2 border-primary/30 bg-background/65 hover:bg-primary/10"
-                onClick={handleAdminLogin}
-                disabled={isLoading}
-              >
-                <Shield className="h-4 w-4" />
-                Entrar como admin
-              </Button>
+              <p className="font-semibold text-foreground">Admin seguro</p>
+              <p>Entra pelo formulário normal com o username <span className="font-mono text-foreground">admin</span>.</p>
+              <p className="mt-1 text-xs">A password do admin é configurada apenas no Railway, em <span className="font-mono text-foreground">MOVINGS_DEMO_ADMIN_PASSWORD</span>.</p>
             </div>
           )}
 

@@ -351,6 +351,7 @@ function install_schema(PDO $pdo) {
     $pdo->exec("CREATE TABLE IF NOT EXISTS favorites (
         id INT UNSIGNED NOT NULL PRIMARY KEY,
         user_id VARCHAR(80) NOT NULL,
+        username VARCHAR(120) NULL,
         movie_id INT NOT NULL,
         media_type VARCHAR(20) NOT NULL DEFAULT 'movie',
         media_title VARCHAR(200) NULL,
@@ -363,6 +364,7 @@ function install_schema(PDO $pdo) {
     $pdo->exec("CREATE TABLE IF NOT EXISTS watchlist (
         id INT UNSIGNED NOT NULL PRIMARY KEY,
         user_id VARCHAR(80) NOT NULL,
+        username VARCHAR(120) NULL,
         movie_id INT NOT NULL,
         media_type VARCHAR(20) NOT NULL DEFAULT 'movie',
         media_title VARCHAR(200) NULL,
@@ -375,7 +377,14 @@ function install_schema(PDO $pdo) {
     $pdo->exec("CREATE TABLE IF NOT EXISTS comment_votes (
         id INT UNSIGNED NOT NULL PRIMARY KEY,
         user_id VARCHAR(80) NOT NULL,
+        username VARCHAR(120) NULL,
+        voter_username VARCHAR(120) NULL,
         comment_id INT UNSIGNED NOT NULL,
+        comment_author_id VARCHAR(80) NULL,
+        comment_author_username VARCHAR(120) NULL,
+        comment_movie_id INT NULL,
+        comment_media_type VARCHAR(20) NULL,
+        comment_media_title VARCHAR(200) NULL,
         vote_type VARCHAR(20) NOT NULL DEFAULT 'like',
         created_at DATETIME NULL,
         UNIQUE KEY uniq_user_comment_vote (user_id, comment_id),
@@ -395,6 +404,7 @@ function install_schema(PDO $pdo) {
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS user_favorite_genre (
         user_id VARCHAR(80) NOT NULL PRIMARY KEY,
+        username VARCHAR(120) NULL,
         genre_id INT NULL,
         genre_name VARCHAR(120) NULL,
         score DECIMAL(10,2) NULL,
@@ -405,6 +415,7 @@ function install_schema(PDO $pdo) {
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS user_stats (
         user_id VARCHAR(80) NOT NULL PRIMARY KEY,
+        username VARCHAR(120) NULL,
         ratings_total INT NOT NULL DEFAULT 0,
         comments_total INT NOT NULL DEFAULT 0,
         pending_comments_total INT NOT NULL DEFAULT 0,
@@ -560,6 +571,7 @@ function install_schema(PDO $pdo) {
     $pdo->exec("CREATE TABLE IF NOT EXISTS user_badges (
         id INT UNSIGNED NOT NULL PRIMARY KEY,
         user_id VARCHAR(80) NOT NULL,
+        username VARCHAR(120) NULL,
         badge_key VARCHAR(80) NOT NULL,
         awarded_at DATETIME NULL,
         UNIQUE KEY uniq_user_badge (user_id, badge_key)
@@ -567,6 +579,7 @@ function install_schema(PDO $pdo) {
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS quiz_results (
         user_id VARCHAR(80) NOT NULL PRIMARY KEY,
+        username VARCHAR(120) NULL,
         result_key VARCHAR(80) NULL,
         result_label VARCHAR(200) NULL,
         result_desc TEXT NULL,
@@ -590,6 +603,7 @@ function install_schema(PDO $pdo) {
     $pdo->exec("CREATE TABLE IF NOT EXISTS admin_logs (
         id INT UNSIGNED NOT NULL PRIMARY KEY,
         admin_id VARCHAR(80) NULL,
+        admin_username VARCHAR(120) NULL,
         action VARCHAR(80) NOT NULL,
         target_type VARCHAR(80) NULL,
         target_id VARCHAR(120) NULL,
@@ -626,6 +640,7 @@ function install_schema(PDO $pdo) {
             'created_at' => 'DATETIME NULL'
         ),
         'watchlist' => array(
+            'username' => 'VARCHAR(120) NULL',
             'movie_id' => 'INT NOT NULL DEFAULT 0',
             'media_type' => "VARCHAR(20) NOT NULL DEFAULT 'movie'",
             'media_title' => 'VARCHAR(200) NULL',
@@ -642,6 +657,7 @@ function install_schema(PDO $pdo) {
             'updated_at' => 'DATETIME NULL'
         ),
         'movie_requests' => array(
+            'username' => 'VARCHAR(120) NULL',
             'poster_url' => 'VARCHAR(500) NULL',
             'trailer_url' => 'VARCHAR(500) NULL',
             'synopsis' => 'TEXT NULL',
@@ -683,10 +699,17 @@ function install_schema(PDO $pdo) {
             'sort_order' => 'INT NOT NULL DEFAULT 0',
             'updated_at' => 'DATETIME NULL'
         ),
+        'user_badges' => array(
+            'username' => 'VARCHAR(120) NULL'
+        ),
         'quiz_results' => array(
             'username' => 'VARCHAR(120) NULL'
         ),
+        'admin_logs' => array(
+            'admin_username' => 'VARCHAR(120) NULL'
+        ),
         'comment_votes' => array(
+            'username' => 'VARCHAR(120) NULL',
             'voter_username' => 'VARCHAR(120) NULL',
             'comment_author_id' => 'VARCHAR(80) NULL',
             'comment_author_username' => 'VARCHAR(120) NULL',
@@ -695,6 +718,7 @@ function install_schema(PDO $pdo) {
             'comment_media_title' => 'VARCHAR(200) NULL'
         ),
         'user_favorite_genre' => array(
+            'username' => 'VARCHAR(120) NULL',
             'genre_id' => 'INT NULL',
             'genre_name' => 'VARCHAR(120) NULL',
             'score' => 'DECIMAL(10,2) NULL',
@@ -703,6 +727,7 @@ function install_schema(PDO $pdo) {
             'updated_at' => 'DATETIME NULL'
         ),
         'user_stats' => array(
+            'username' => 'VARCHAR(120) NULL',
             'ratings_total' => 'INT NOT NULL DEFAULT 0',
             'comments_total' => 'INT NOT NULL DEFAULT 0',
             'pending_comments_total' => 'INT NOT NULL DEFAULT 0',
@@ -733,7 +758,17 @@ function install_schema(PDO $pdo) {
         ensure_column($pdo, $table, 'dislikes', 'INT NOT NULL DEFAULT 0');
         ensure_column($pdo, $table, 'approved_at', 'DATETIME NULL');
     }
-    ensure_column($pdo, 'ratings', 'username', 'VARCHAR(120) NULL');
+    foreach (array('ratings', 'comments', 'pending_comments', 'favorites', 'watchlist', 'movie_requests', 'user_favorite_genre', 'user_stats', 'user_badges', 'quiz_results') as $table) {
+        ensure_column($pdo, $table, 'username', 'VARCHAR(120) NULL');
+    }
+    ensure_column($pdo, 'comment_votes', 'username', 'VARCHAR(120) NULL');
+    ensure_column($pdo, 'comment_votes', 'voter_username', 'VARCHAR(120) NULL');
+    ensure_column($pdo, 'comment_votes', 'comment_author_id', 'VARCHAR(80) NULL');
+    ensure_column($pdo, 'comment_votes', 'comment_author_username', 'VARCHAR(120) NULL');
+    ensure_column($pdo, 'comment_votes', 'comment_movie_id', 'INT NULL');
+    ensure_column($pdo, 'comment_votes', 'comment_media_type', 'VARCHAR(20) NULL');
+    ensure_column($pdo, 'comment_votes', 'comment_media_title', 'VARCHAR(200) NULL');
+    ensure_column($pdo, 'admin_logs', 'admin_username', 'VARCHAR(120) NULL');
     ensure_column($pdo, 'user_favorite_genre', 'genre_name', 'VARCHAR(120) NULL');
     ensure_column($pdo, 'user_favorite_genre', 'score', 'DECIMAL(10,2) NULL');
     ensure_column($pdo, 'user_stats', 'favorite_genre_name', 'VARCHAR(120) NULL');
@@ -1032,6 +1067,8 @@ function ensure_store_shape($store) {
         if (isset($user['id'])) update_user_stats($store, $user['id']);
     }
 
+    movings_enrich_usernames($store);
+
     bump_next_ids_from_store($store);
     return $store;
 }
@@ -1055,6 +1092,21 @@ function save_store($store) {
     ensure_column($pdo, 'movie_requests', 'poster_url', 'VARCHAR(500) NULL');
     ensure_column($pdo, 'movie_requests', 'trailer_url', 'VARCHAR(500) NULL');
     ensure_column($pdo, 'movie_requests', 'synopsis', 'TEXT NULL');
+
+    foreach (array('ratings', 'comments', 'pending_comments', 'favorites', 'watchlist', 'movie_requests', 'user_favorite_genre', 'user_stats', 'user_badges', 'quiz_results') as $table) {
+        ensure_column($pdo, $table, 'username', 'VARCHAR(120) NULL');
+    }
+    ensure_column($pdo, 'comment_votes', 'username', 'VARCHAR(120) NULL');
+    ensure_column($pdo, 'comment_votes', 'voter_username', 'VARCHAR(120) NULL');
+    ensure_column($pdo, 'comment_votes', 'comment_author_id', 'VARCHAR(80) NULL');
+    ensure_column($pdo, 'comment_votes', 'comment_author_username', 'VARCHAR(120) NULL');
+    ensure_column($pdo, 'comment_votes', 'comment_movie_id', 'INT NULL');
+    ensure_column($pdo, 'comment_votes', 'comment_media_type', 'VARCHAR(20) NULL');
+    ensure_column($pdo, 'comment_votes', 'comment_media_title', 'VARCHAR(200) NULL');
+    ensure_column($pdo, 'admin_logs', 'admin_username', 'VARCHAR(120) NULL');
+
+    movings_enrich_usernames($store);
+
     if (isset($store['users_favorite_genre'])) unset($store['users_favorite_genre']);
     if (isset($store['users_stats'])) unset($store['users_stats']);
     bump_next_ids_from_store($store);
@@ -1106,19 +1158,32 @@ function save_store($store) {
             }
         }
 
-        $stmtFav = $pdo->prepare('INSERT INTO favorites (id,user_id,movie_id,media_type,media_title,created_at) VALUES (?,?,?,?,?,?)');
+        $stmtFav = $pdo->prepare('INSERT INTO favorites (id,user_id,username,movie_id,media_type,media_title,created_at) VALUES (?,?,?,?,?,?,?)');
         foreach ($store['favorites'] as $f) {
-            $stmtFav->execute(array(intval($f['id']), (string)$f['user_id'], intval($f['movie_id']), isset($f['media_type']) ? $f['media_type'] : 'movie', isset($f['media_title']) ? $f['media_title'] : null, isset($f['created_at']) ? $f['created_at'] : now_iso()));
+            $stmtFav->execute(array(intval($f['id']), (string)$f['user_id'], isset($f['username']) ? $f['username'] : null, intval($f['movie_id']), isset($f['media_type']) ? $f['media_type'] : 'movie', isset($f['media_title']) ? $f['media_title'] : null, isset($f['created_at']) ? $f['created_at'] : now_iso()));
         }
 
-        $stmtWish = $pdo->prepare('INSERT INTO watchlist (id,user_id,movie_id,media_type,media_title,created_at) VALUES (?,?,?,?,?,?)');
+        $stmtWish = $pdo->prepare('INSERT INTO watchlist (id,user_id,username,movie_id,media_type,media_title,created_at) VALUES (?,?,?,?,?,?,?)');
         foreach ($store['watchlist'] as $w) {
-            $stmtWish->execute(array(intval($w['id']), (string)$w['user_id'], intval($w['movie_id']), isset($w['media_type']) ? $w['media_type'] : 'movie', isset($w['media_title']) ? $w['media_title'] : null, isset($w['created_at']) ? $w['created_at'] : now_iso()));
+            $stmtWish->execute(array(intval($w['id']), (string)$w['user_id'], isset($w['username']) ? $w['username'] : null, intval($w['movie_id']), isset($w['media_type']) ? $w['media_type'] : 'movie', isset($w['media_title']) ? $w['media_title'] : null, isset($w['created_at']) ? $w['created_at'] : now_iso()));
         }
 
-        $stmtVote = $pdo->prepare('INSERT INTO comment_votes (id,user_id,comment_id,vote_type,created_at) VALUES (?,?,?,?,?)');
+        $stmtVote = $pdo->prepare('INSERT INTO comment_votes (id,user_id,username,voter_username,comment_id,vote_type,comment_author_id,comment_author_username,comment_movie_id,comment_media_type,comment_media_title,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
         foreach ($store['comment_votes'] as $v) {
-            $stmtVote->execute(array(intval($v['id']), (string)$v['user_id'], intval($v['comment_id']), isset($v['vote_type']) ? $v['vote_type'] : 'like', isset($v['created_at']) ? $v['created_at'] : now_iso()));
+            $stmtVote->execute(array(
+                intval($v['id']),
+                (string)$v['user_id'],
+                isset($v['username']) ? $v['username'] : null,
+                isset($v['voter_username']) ? $v['voter_username'] : (isset($v['username']) ? $v['username'] : null),
+                intval($v['comment_id']),
+                isset($v['vote_type']) ? $v['vote_type'] : 'like',
+                isset($v['comment_author_id']) ? $v['comment_author_id'] : null,
+                isset($v['comment_author_username']) ? $v['comment_author_username'] : null,
+                isset($v['comment_movie_id']) ? $v['comment_movie_id'] : null,
+                isset($v['comment_media_type']) ? $v['comment_media_type'] : null,
+                isset($v['comment_media_title']) ? $v['comment_media_title'] : null,
+                isset($v['created_at']) ? $v['created_at'] : now_iso()
+            ));
         }
 
         if (table_exists($pdo, 'movie_genres')) {
@@ -1129,16 +1194,16 @@ function save_store($store) {
         }
 
         if (table_exists($pdo, 'user_favorite_genre')) {
-            $stmtUFG = $pdo->prepare('INSERT INTO user_favorite_genre (user_id,genre_id,genre_name,score,source,created_at,updated_at) VALUES (?,?,?,?,?,?,?)');
+            $stmtUFG = $pdo->prepare('INSERT INTO user_favorite_genre (user_id,username,genre_id,genre_name,score,source,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)');
             foreach ($store['user_favorite_genre'] as $ufg) {
-                $stmtUFG->execute(array((string)$ufg['user_id'], isset($ufg['genre_id']) ? $ufg['genre_id'] : null, isset($ufg['genre_name']) ? $ufg['genre_name'] : null, isset($ufg['score']) ? $ufg['score'] : null, isset($ufg['source']) ? $ufg['source'] : 'auto', isset($ufg['created_at']) ? $ufg['created_at'] : null, isset($ufg['updated_at']) ? $ufg['updated_at'] : now_iso()));
+                $stmtUFG->execute(array((string)$ufg['user_id'], isset($ufg['username']) ? $ufg['username'] : null, isset($ufg['genre_id']) ? $ufg['genre_id'] : null, isset($ufg['genre_name']) ? $ufg['genre_name'] : null, isset($ufg['score']) ? $ufg['score'] : null, isset($ufg['source']) ? $ufg['source'] : 'auto', isset($ufg['created_at']) ? $ufg['created_at'] : null, isset($ufg['updated_at']) ? $ufg['updated_at'] : now_iso()));
             }
         }
 
         if (table_exists($pdo, 'user_stats')) {
-            $stmtStats = $pdo->prepare('INSERT INTO user_stats (user_id,ratings_total,comments_total,pending_comments_total,favorites_total,ratings_avg,movies_watched,movies_rated,comments_posted,favorite_genre_id,favorite_genre_name,top_genre_id,top_genre_name,genre_distribution,genre_distribution_labels,genre_distribution_rows,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+            $stmtStats = $pdo->prepare('INSERT INTO user_stats (user_id,username,ratings_total,comments_total,pending_comments_total,favorites_total,ratings_avg,movies_watched,movies_rated,comments_posted,favorite_genre_id,favorite_genre_name,top_genre_id,top_genre_name,genre_distribution,genre_distribution_labels,genre_distribution_rows,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
             foreach ($store['user_stats'] as $s) {
-                $stmtStats->execute(array((string)$s['user_id'], intval($s['ratings_total']), intval($s['comments_total']), intval($s['pending_comments_total']), intval($s['favorites_total']), floatval($s['ratings_avg']), intval($s['movies_watched']), intval($s['movies_rated']), intval($s['comments_posted']), isset($s['favorite_genre_id']) ? $s['favorite_genre_id'] : null, isset($s['favorite_genre_name']) ? $s['favorite_genre_name'] : null, isset($s['top_genre_id']) ? $s['top_genre_id'] : null, isset($s['top_genre_name']) ? $s['top_genre_name'] : null, mysql_json_encode(isset($s['genre_distribution']) ? $s['genre_distribution'] : array()), mysql_json_encode(isset($s['genre_distribution_labels']) ? $s['genre_distribution_labels'] : array()), mysql_json_encode(isset($s['genre_distribution_rows']) ? $s['genre_distribution_rows'] : array()), isset($s['updated_at']) ? $s['updated_at'] : now_iso()));
+                $stmtStats->execute(array((string)$s['user_id'], isset($s['username']) ? $s['username'] : null, intval($s['ratings_total']), intval($s['comments_total']), intval($s['pending_comments_total']), intval($s['favorites_total']), floatval($s['ratings_avg']), intval($s['movies_watched']), intval($s['movies_rated']), intval($s['comments_posted']), isset($s['favorite_genre_id']) ? $s['favorite_genre_id'] : null, isset($s['favorite_genre_name']) ? $s['favorite_genre_name'] : null, isset($s['top_genre_id']) ? $s['top_genre_id'] : null, isset($s['top_genre_name']) ? $s['top_genre_name'] : null, mysql_json_encode(isset($s['genre_distribution']) ? $s['genre_distribution'] : array()), mysql_json_encode(isset($s['genre_distribution_labels']) ? $s['genre_distribution_labels'] : array()), mysql_json_encode(isset($s['genre_distribution_rows']) ? $s['genre_distribution_rows'] : array()), isset($s['updated_at']) ? $s['updated_at'] : now_iso()));
             }
         }
 
@@ -1198,19 +1263,19 @@ function save_store($store) {
             ));
         }
 
-        $stmtUB = $pdo->prepare('INSERT INTO user_badges (id,user_id,badge_key,awarded_at) VALUES (?,?,?,?)');
+        $stmtUB = $pdo->prepare('INSERT INTO user_badges (id,user_id,username,badge_key,awarded_at) VALUES (?,?,?,?,?)');
         foreach ($store['user_badges'] as $ub) {
-            $stmtUB->execute(array(isset($ub['id']) ? intval($ub['id']) : next_id($store, 'user_badge'), isset($ub['user_id']) ? $ub['user_id'] : '', isset($ub['badge_key']) ? $ub['badge_key'] : '', isset($ub['awarded_at']) ? $ub['awarded_at'] : now_iso()));
+            $stmtUB->execute(array(isset($ub['id']) ? intval($ub['id']) : next_id($store, 'user_badge'), isset($ub['user_id']) ? $ub['user_id'] : '', isset($ub['username']) ? $ub['username'] : null, isset($ub['badge_key']) ? $ub['badge_key'] : '', isset($ub['awarded_at']) ? $ub['awarded_at'] : now_iso()));
         }
 
-        $stmtQuiz = $pdo->prepare('INSERT INTO quiz_results (user_id,result_key,result_label,result_desc,created_at) VALUES (?,?,?,?,?)');
+        $stmtQuiz = $pdo->prepare('INSERT INTO quiz_results (user_id,username,result_key,result_label,result_desc,created_at) VALUES (?,?,?,?,?,?)');
         foreach ($store['quiz_results'] as $q) {
-            $stmtQuiz->execute(array((string)$q['user_id'], isset($q['result_key']) ? $q['result_key'] : null, isset($q['result_label']) ? $q['result_label'] : null, isset($q['result_desc']) ? $q['result_desc'] : null, isset($q['created_at']) ? $q['created_at'] : now_iso()));
+            $stmtQuiz->execute(array((string)$q['user_id'], isset($q['username']) ? $q['username'] : null, isset($q['result_key']) ? $q['result_key'] : null, isset($q['result_label']) ? $q['result_label'] : null, isset($q['result_desc']) ? $q['result_desc'] : null, isset($q['created_at']) ? $q['created_at'] : now_iso()));
         }
 
-        $stmtLog = $pdo->prepare('INSERT INTO admin_logs (id,admin_id,action,target_type,target_id,details,created_at) VALUES (?,?,?,?,?,?,?)');
+        $stmtLog = $pdo->prepare('INSERT INTO admin_logs (id,admin_id,admin_username,action,target_type,target_id,details,created_at) VALUES (?,?,?,?,?,?,?,?)');
         foreach ($store['admin_logs'] as $l) {
-            $stmtLog->execute(array(intval($l['id']), isset($l['admin_id']) ? $l['admin_id'] : null, isset($l['action']) ? $l['action'] : '', isset($l['target_type']) ? $l['target_type'] : null, isset($l['target_id']) ? $l['target_id'] : null, isset($l['details']) ? $l['details'] : null, isset($l['created_at']) ? $l['created_at'] : now_iso()));
+            $stmtLog->execute(array(intval($l['id']), isset($l['admin_id']) ? $l['admin_id'] : null, isset($l['admin_username']) ? $l['admin_username'] : null, isset($l['action']) ? $l['action'] : '', isset($l['target_type']) ? $l['target_type'] : null, isset($l['target_id']) ? $l['target_id'] : null, isset($l['details']) ? $l['details'] : null, isset($l['created_at']) ? $l['created_at'] : now_iso()));
         }
 
         $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
@@ -1228,7 +1293,7 @@ function load_store() {
     $store = ensure_store_shape($store);
 
     // Demo pública: quando ativado por variável de ambiente, garante que
-    // o utilizador admin/admin123 existe também em produção Railway.
+    // o utilizador admin/password segura configurada existe também em produção Railway.
     if (movings_is_local_request() || movings_env_bool('MOVINGS_ENABLE_DEMO_ADMIN', false)) {
         $store = ensure_admin($store);
     }
@@ -1319,6 +1384,14 @@ function next_id(&$store, $key) {
     return $id;
 }
 
+function movings_default_admin_password() {
+    $password = (string)movings_env_value('MOVINGS_DEMO_ADMIN_PASSWORD', 'MovingsAdmin#2026!');
+    $password = trim($password);
+
+    // Fallback defensivo: nunca voltar a usar admin123 se a variável vier vazia.
+    return $password !== '' ? $password : 'MovingsAdmin#2026!';
+}
+
 function ensure_admin($store) {
     $foundIndex = null;
     foreach ($store['users'] as $i => $user) {
@@ -1334,7 +1407,7 @@ function ensure_admin($store) {
         'email' => 'admin@movings.local',
         'username' => 'admin',
         'username_norm' => 'admin',
-        'password_hash' => password_hash('admin123', PASSWORD_DEFAULT),
+        'password_hash' => password_hash(movings_default_admin_password(), PASSWORD_DEFAULT),
         'role' => 'admin',
         'blocked' => false,
         'created_at' => now_iso()
@@ -1345,11 +1418,115 @@ function ensure_admin($store) {
     } else {
         $old = $store['users'][$foundIndex];
         $admin['created_at'] = isset($old['created_at']) ? $old['created_at'] : now_iso();
-        // Mantém o id fixo para o admin, mas não toca nos restantes utilizadores.
+        // Mantém o id fixo para o admin, mas atualiza a password pelo valor seguro configurado.
         $store['users'][$foundIndex] = $admin;
     }
 
     return $store;
+}
+
+function movings_username_by_user_id($store, $userId, $fallback = '') {
+    $userId = trim((string)$userId);
+    if ($userId === '') return $fallback;
+
+    if (isset($store['users']) && is_array($store['users'])) {
+        foreach ($store['users'] as $user) {
+            if (isset($user['id']) && (string)$user['id'] === $userId) {
+                $username = isset($user['username']) ? trim((string)$user['username']) : '';
+                return $username !== '' ? $username : $fallback;
+            }
+        }
+    }
+
+    return $fallback;
+}
+
+function movings_find_comment_for_user_lookup($store, $commentId) {
+    $commentId = intval($commentId);
+    if ($commentId <= 0) return null;
+
+    foreach (array('comments', 'pending_comments') as $table) {
+        if (!isset($store[$table]) || !is_array($store[$table])) continue;
+
+        foreach ($store[$table] as $comment) {
+            if (isset($comment['id']) && intval($comment['id']) === $commentId) {
+                return $comment;
+            }
+        }
+    }
+
+    return null;
+}
+
+function movings_enrich_usernames(&$store) {
+    $userTables = array(
+        'ratings',
+        'comments',
+        'pending_comments',
+        'favorites',
+        'watchlist',
+        'movie_requests',
+        'user_badges'
+    );
+
+    foreach ($userTables as $table) {
+        if (!isset($store[$table]) || !is_array($store[$table])) continue;
+
+        foreach ($store[$table] as &$row) {
+            if (!is_array($row) || !isset($row['user_id'])) continue;
+            $existing = isset($row['username']) ? (string)$row['username'] : '';
+            $row['username'] = movings_username_by_user_id($store, $row['user_id'], $existing);
+        }
+        unset($row);
+    }
+
+    foreach (array('user_favorite_genre', 'user_stats', 'quiz_results') as $table) {
+        if (!isset($store[$table]) || !is_array($store[$table])) continue;
+
+        foreach ($store[$table] as $key => &$row) {
+            if (!is_array($row)) continue;
+            if (!isset($row['user_id']) || trim((string)$row['user_id']) === '') {
+                $row['user_id'] = (string)$key;
+            }
+            $existing = isset($row['username']) ? (string)$row['username'] : '';
+            $row['username'] = movings_username_by_user_id($store, $row['user_id'], $existing);
+        }
+        unset($row);
+    }
+
+    if (isset($store['comment_votes']) && is_array($store['comment_votes'])) {
+        foreach ($store['comment_votes'] as &$vote) {
+            if (!is_array($vote)) continue;
+
+            $existing = isset($vote['username']) ? (string)$vote['username'] : (isset($vote['voter_username']) ? (string)$vote['voter_username'] : '');
+            $username = isset($vote['user_id']) ? movings_username_by_user_id($store, $vote['user_id'], $existing) : $existing;
+            $vote['username'] = $username;
+            $vote['voter_username'] = $username;
+
+            $comment = isset($vote['comment_id']) ? movings_find_comment_for_user_lookup($store, $vote['comment_id']) : null;
+            if ($comment) {
+                $vote['comment_author_id'] = isset($comment['user_id']) ? $comment['user_id'] : null;
+                $vote['comment_author_username'] = isset($comment['username'])
+                    ? $comment['username']
+                    : movings_username_by_user_id($store, isset($comment['user_id']) ? $comment['user_id'] : '', '');
+                $vote['comment_movie_id'] = isset($comment['movie_id']) ? intval($comment['movie_id']) : null;
+                $vote['comment_media_type'] = isset($comment['media_type']) ? $comment['media_type'] : 'movie';
+                $vote['comment_media_title'] = isset($comment['media_title']) ? $comment['media_title'] : null;
+            }
+        }
+        unset($vote);
+    }
+
+    if (isset($store['admin_logs']) && is_array($store['admin_logs'])) {
+        foreach ($store['admin_logs'] as &$log) {
+            if (!is_array($log)) continue;
+            $existing = isset($log['admin_username']) ? (string)$log['admin_username'] : '';
+            $log['admin_username'] = isset($log['admin_id'])
+                ? movings_username_by_user_id($store, $log['admin_id'], $existing)
+                : $existing;
+        }
+        unset($log);
+    }
 }
 
 function read_json_body() {
@@ -1713,8 +1890,11 @@ function update_user_stats(&$store, $userId) {
         return $b['count'] <=> $a['count'];
     });
 
+    $username = movings_username_by_user_id($store, $userId, '');
+
     $stats = array(
         'user_id' => $userId,
+        'username' => $username,
         'ratings_total' => $ratingsTotal,
         'comments_total' => $commentsTotal,
         'pending_comments_total' => $pendingCommentsTotal,
@@ -1736,6 +1916,7 @@ function update_user_stats(&$store, $userId) {
     $store['user_stats'][$userId] = $stats;
     $store['user_favorite_genre'][$userId] = array(
         'user_id' => $userId,
+        'username' => $username,
         'genre_id' => $topGenreId,
         'genre_name' => $topGenreName,
         'score' => $topScore > 0 ? $topScore : 0,

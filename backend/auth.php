@@ -155,17 +155,16 @@ try {
     }
 
     if ($action === 'admin_demo_login') {
-        // Acesso rápido permitido em local ou quando explicitamente ativado
-        // para a demo pública Railway através de MOVINGS_ENABLE_DEMO_ADMIN=true.
-        if (!movings_is_local_request() && !movings_env_bool('MOVINGS_ENABLE_DEMO_ADMIN', false)) {
+        // Segurança: em produção/Railway já não existe login admin por atalho.
+        // O admin entra pelo fluxo normal com username + password forte configurada.
+        if (!movings_is_local_request()) {
             json_response(array(
                 'ok' => false,
-                'error' => 'forbidden',
-                'message' => 'Login demo desativado em produção. Ativa MOVINGS_ENABLE_DEMO_ADMIN=true no backend para a demo.'
+                'error' => 'admin_shortcut_disabled',
+                'message' => 'O login direto de admin foi desativado em produção. Entra com username admin e a password configurada no Railway.'
             ), 403);
         }
 
-        // Mantém o admin sempre sincronizado com admin/admin123 e evita bloqueios por dados antigos no navegador.
         $store = ensure_admin($store);
         $admin = find_user_by_username($store, 'admin');
 
@@ -186,7 +185,7 @@ try {
             'token' => generate_token($admin),
             'csrf_token' => $csrf,
             'user' => public_user($admin),
-            'message' => 'Admin ativado para apresentação local.'
+            'message' => 'Admin ativado apenas em ambiente local.'
         ));
     }
 
