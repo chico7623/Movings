@@ -1292,19 +1292,11 @@ function load_store() {
     $store = load_store_from_mysql($pdo);
     $store = ensure_store_shape($store);
 
-    // Demo pública: quando ativado por variável de ambiente, garante que
-    // o utilizador admin/password segura configurada existe também em produção Railway.
-    if (movings_is_local_request() || movings_env_bool('MOVINGS_ENABLE_DEMO_ADMIN', false)) {
-        $store = ensure_admin($store);
-    }
+    // O admin (username "admin" + password de MOVINGS_DEMO_ADMIN_PASSWORD) é
+    // sempre sincronizado, independente de MOVINGS_ENABLE_DEMO_ADMIN — essa
+    // variável só controla o atalho público, não a existência do admin real.
+    $store = ensure_admin($store);
 
-    save_store($store);
-    return $store;
-}
-
-function reset_store() {
-    $store = default_store();
-    $store = ensure_store_shape($store);
     save_store($store);
     return $store;
 }
